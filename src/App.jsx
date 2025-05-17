@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { getIcon } from './utils/iconUtils.js'
 import Home from './pages/Home.jsx'
 import NotFound from './pages/NotFound.jsx'
+import Analytics from './pages/Analytics.jsx'
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(
@@ -52,6 +53,7 @@ function App() {
         
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/analytics" element={<Analytics />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         

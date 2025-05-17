@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { getIcon } from '../utils/iconUtils.js'
 import MainFeature from '../components/MainFeature.jsx'
@@ -17,6 +18,7 @@ const Home = () => {
   const ChartBarIcon = getIcon('BarChart')
   const XIcon = getIcon('X')
   const PanelsTopLeftIcon = getIcon('PanelsTopLeft')
+  const LineChartIcon = getIcon('LineChart')
   const BellIcon = getIcon('Bell')
   const UserCircleIcon = getIcon('UserCircle')
   
@@ -27,6 +29,7 @@ const Home = () => {
     { id: 'students', label: 'Students', icon: UsersIcon },
     { id: 'schedule', label: 'Schedule', icon: CalendarIcon },
     { id: 'attendance', label: 'Attendance', icon: ClipboardListIcon },
+    { id: 'analytics', label: 'Analytics', icon: LineChartIcon },
     { id: 'reports', label: 'Reports', icon: ChartBarIcon },
   ]
   
@@ -76,15 +79,24 @@ const Home = () => {
               const Icon = item.icon
               return (
                 <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
-                            ${activeTab === item.id 
-                                ? 'bg-primary text-white' 
-                                : 'text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700'}`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
+                  key={item.id}>
+                  {item.id === 'analytics' ? (
+                    <Link
+                      to="/analytics"
+                      className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
+                                border-transparent text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700"
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </Link>
+                  ) : (
+                    <div onClick={() => setActiveTab(item.id)}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors cursor-pointer
+                                ${activeTab === item.id ? 'bg-primary text-white' : 'border-transparent text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700'}`}>
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </div>
+                  )}
                 </button>
               )
             })}
@@ -100,15 +112,24 @@ const Home = () => {
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex flex-col items-center justify-center space-y-1
-                            ${activeTab === item.id
-                                ? 'text-primary' 
-                                : 'text-surface-600 dark:text-surface-400'}`}
+                  key={item.id}>
+                  {item.id === 'analytics' ? (
+                    <Link
+                      to="/analytics"
+                      className="flex flex-col items-center justify-center space-y-1
+                                text-surface-600 dark:text-surface-400"
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-xs font-medium">{item.label}</span>
+                    </Link>
+                  ) : (
+                    <div onClick={() => setActiveTab(item.id)} className={`flex flex-col items-center justify-center space-y-1 cursor-pointer ${activeTab === item.id
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-xs font-medium">{item.label}</span>
                 </button>
               )
+              )}
             })}
           </div>
         </div>
