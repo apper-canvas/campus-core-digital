@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { getIcon } from './utils/iconUtils.js'
 import Home from './pages/Home.jsx'
 import NotFound from './pages/NotFound.jsx'
+import Students from './pages/Students.jsx'
 import Analytics from './pages/Analytics.jsx'
 
 function App() {
@@ -54,6 +55,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/students" element={<Students />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         
