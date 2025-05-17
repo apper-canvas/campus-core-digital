@@ -1,9 +1,51 @@
-// Mock data for student performance analytics
+let analyticsData = [
+  {
+    id: '1',
+    title: 'Student Progression Analysis Q1 2023',
+    type: 'progression',
+    description: 'Analysis of student academic progression during the first quarter of 2023',
+    date: '2023-04-15',
+    metrics: {
+      average: 78,
+      improvement: 15,
+      samples: 45
+    }
+  },
+  {
+    id: '2',
+    title: 'Course Performance Evaluation',
+    type: 'performance',
+    description: 'Evaluation of course effectiveness based on student outcomes',
+    date: '2023-05-20',
+    metrics: {
+      passRate: 88,
+      averageScore: 82,
+      topPerformers: 12
+    }
+  },
+  {
+    id: '3',
+    title: 'Semester Grade Distribution',
+    type: 'distribution',
+    description: 'Analysis of grade distribution across all courses for the Spring semester',
+    date: '2023-06-10',
+    metrics: {
+      aCount: 18,
+      bCount: 24,
+      cCount: 15,
+      dCount: 8,
+      fCount: 5
+    }
+  }
+];
 
-export const getGradeDistribution = (timeframe) => {
-  const distributions = {
-    semester: {
+// Add a new analytics
+export function addAnalytics(analytics) {
+  analyticsData.unshift(analytics);
       counts: [245, 386, 192, 63, 24],
+
+// Export the analytics data
+export { analyticsData };
       percentages: [26.9, 42.4, 21.1, 6.9, 2.7]
     },
     year: {

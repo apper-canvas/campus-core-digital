@@ -1,16 +1,169 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { motion } from 'framer-motion'
+import { toast } from 'react-toastify'
 import { toast } from 'react-toastify'
 import { getIcon } from '../utils/iconUtils.js'
 import GradeDistributionChart from '../components/charts/GradeDistributionChart.jsx'
 import CoursePerformanceChart from '../components/charts/CoursePerformanceChart.jsx'
 import StudentProgressionChart from '../components/charts/StudentProgressionChart.jsx'
+import { analyticsData, addAnalytics } from '../data/analyticsData'
 import ReportGenerator from '../components/ReportGenerator.jsx'
 import BackButton from '../components/BackButton.jsx'
 
-const Analytics = () => {
-  const [selectedTimeframe, setSelectedTimeframe] = useState('semester')
+  const [showAddForm, setShowAddForm] = useState(false)
+  const [newAnalytics, setNewAnalytics] = useState({
+    id: '',
+    title: '',
+    type: 'progression',
+    description: '',
+    date: new Date().toISOString().split('T')[0],
+    metrics: {}
+  })
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Filter the analytics data based on search query
+  const filteredAnalytics = analyticsData.filter(
+    analytics => 
+      analytics.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      analytics.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      analytics.description.toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target
+    setNewAnalytics({
+      ...newAnalytics,
+      [name]: value
+    })
+  }
+
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    
+    // Simple validation
+    if (!newAnalytics.title.trim() || !newAnalytics.description.trim()) {
+      toast.error("Please fill all required fields")
+      return
+    }
+    
+    // Generate a unique ID (in a real app, the backend would handle this)
+    const analyticsWithId = {
+      ...newAnalytics,
+      id: Date.now().toString()
+    }
+    
+    // Add metrics based on the type
+    if (newAnalytics.type === 'progression') {
+      analyticsWithId.metrics = {
+        average: 75,
+        improvement: 12,
+        samples: 32
+      }
+    } else if (newAnalytics.type === 'performance') {
+      analyticsWithId.metrics = {
+        passRate: 85,
+        averageScore: 78,
+        topPerformers: 15
+      }
+    } else {
+      analyticsWithId.metrics = {
+        aCount: 12,
+        bCount: 18,
+        cCount: 8,
+        dCount: 4,
+        fCount: 2
+      }
+    }
+    
+    // Add the new analytics
+    addAnalytics(analyticsWithId)
+    
+    // Reset form and close modal
+    setNewAnalytics({
+      id: '',
+      title: '',
+      type: 'progression',
+      description: '',
+      date: new Date().toISOString().split('T')[0],
+      metrics: {}
+    })
+    setShowAddForm(false)
+    
+    // Show success message
+    toast.success("New analytics added successfully")
+  }
+
+  // Icons
   const [showReportGenerator, setShowReportGenerator] = useState(false)
+  const PlusIcon = getIcon('Plus')
+  const SearchIcon = getIcon('Search')
+  const XIcon = getIcon('X')
+  
+  const renderAddForm = () => (
+    <div className="fixed inset-0 bg-surface-900/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-surface-800 rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">Add New Analytics</h3>
+          <button 
+            onClick={() => setShowAddForm(false)}
+            className="p-1 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700"
+          >
+            <XIcon className="w-5 h-5" />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="title" className="label">Title</label>
+            <input
+              type="text"
+              id="title"
+              name="title"
+              value={newAnalytics.title}
+              onChange={handleInputChange}
+              className="input"
+              placeholder="Analytics Title"
+              required
+            />
+          </div>
+          
+          <div className="mb-4">
+            <label htmlFor="type" className="label">Type</label>
+            <select
+              id="type"
+              name="type"
+              value={newAnalytics.type}
+              onChange={handleInputChange}
+              className="input"
+              required
+            >
+              <option value="progression">Student Progression</option>
+              <option value="performance">Course Performance</option>
+              <option value="distribution">Grade Distribution</option>
+            </select>
+          </div>
+          
+          <div className="mb-4">
+            <label htmlFor="description" className="label">Description</label>
+            <textarea
+              id="description"
+              name="description"
+              value={newAnalytics.description}
+              onChange={handleInputChange}
+              className="input min-h-[100px]"
+              placeholder="Analytics Description"
+              required
+            ></textarea>
+          </div>
+          
+          <button type="submit" className="btn btn-primary w-full">Add Analytics</button>
+        </form>
+      </div>
+    </div>
+  )
   
   // Icons
   const GraduationCapIcon = getIcon('GraduationCap')
@@ -19,18 +172,77 @@ const Analytics = () => {
   const PercentIcon = getIcon('Percent')
   const AwardIcon = getIcon('Award')
   const DownloadIcon = getIcon('Download')
+      
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2">Analytics Dashboard</h1>
+          <p className="text-surface-600 dark:text-surface-400">
+            View and manage all analytics reports
+          </p>
+        </div>
+        
+        <button 
+          onClick={() => setShowAddForm(true)}
+          className="btn btn-primary mt-4 sm:mt-0"
+        >
+          <PlusIcon className="w-5 h-5 mr-2" />
+          Add New Analytics
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="mb-6 relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <SearchIcon className="h-5 w-5 text-surface-500" />
+        </div>
+        <input
+          type="text"
+          placeholder="Search analytics..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="input pl-10"
+        />
+      </div>
+      
+      {/* Analytics List */}
+      <div className="mb-8 overflow-x-auto bg-white dark:bg-surface-800 rounded-xl shadow-card border border-surface-200 dark:border-surface-700">
+        <table className="min-w-full divide-y divide-surface-200 dark:divide-surface-700">
+          <thead className="bg-surface-50 dark:bg-surface-800">
+            <tr>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Title</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Type</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Description</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Date</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white dark:bg-surface-800 divide-y divide-surface-200 dark:divide-surface-700">
+            {filteredAnalytics.map((item) => (
+              <tr key={item.id} className="hover:bg-surface-50 dark:hover:bg-surface-700">
+                <td className="px-6 py-4 whitespace-nowrap">{item.title}</td>
+                <td className="px-6 py-4 whitespace-nowrap capitalize">{item.type}</td>
+                <td className="px-6 py-4">{item.description}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{new Date(item.date).toLocaleDateString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
   const ClipboardIcon = getIcon('Clipboard')
-  const UsersIcon = getIcon('Users')
-  const BellIcon = getIcon('Bell')
-  const ArrowLeftIcon = getIcon('ArrowLeft')
-  
-  const handleExportData = () => {
-    toast.success("Analytics data exported successfully")
-  }
-  
+      {/* Analytics Charts */}
+      <h2 className="text-xl font-bold mb-4">Key Insights</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <StudentProgressionChart />
+        <CoursePerformanceChart />
+      </div>
+      
+      <div className="mb-6">
   return (
     <motion.div 
       initial={{ opacity: 0 }}
+      
+      {/* Add Form Modal */}
+      {showAddForm && renderAddForm()}
+      
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="min-h-screen flex flex-col"
