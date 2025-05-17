@@ -111,8 +111,7 @@ const Home = () => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  key={item.id}>
+                  onClick={() => setActiveTab(item.id)}>
                   {item.id === 'analytics' ? (
                     <Link
                       to="/analytics"
@@ -123,13 +122,15 @@ const Home = () => {
                       <span className="text-xs font-medium">{item.label}</span>
                     </Link>
                   ) : (
-                    <div onClick={() => setActiveTab(item.id)} className={`flex flex-col items-center justify-center space-y-1 cursor-pointer ${activeTab === item.id
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-xs font-medium">{item.label}</span>
+                    <div 
+                      className={`flex flex-col items-center justify-center space-y-1 cursor-pointer ${activeTab === item.id ? 'text-primary font-medium' : 'text-surface-600 dark:text-surface-400'}`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-xs font-medium">{item.label}</span>
+                    </div>
+                  )}
                 </button>
               )
-              )}
             })}
           </div>
         </div>
