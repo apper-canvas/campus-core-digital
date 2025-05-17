@@ -429,16 +429,17 @@ function Analytics() {
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Grade Distribution Chart */}
-        </div>
-        
-        {/* Charts Section */}
+            <GradeDistributionChart timeframe={selectedTimeframe} />
+            
             {/* Course Performance Chart */}
             <CoursePerformanceChart timeframe={selectedTimeframe} />
           </div>
           
-          {/* Student Progression Chart */}
-          <StudentProgressionChart timeframe={selectedTimeframe} />
+          <div className="mb-6">
+            {/* Student Progression Chart */}
+            <StudentProgressionChart timeframe={selectedTimeframe} />
           </div>
+          
           
           {/* Add Form Modal */}
           {showAddForm && renderAddForm()}
