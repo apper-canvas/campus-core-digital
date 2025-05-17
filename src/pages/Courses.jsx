@@ -340,8 +340,7 @@ const Courses = () => {
               </form>
             </div>
           </div>
-        {/* Edit Course Form Modal */}
-        {isEditFormVisible && selectedCourse && (
+        )}        {/* Edit Course Form Modal */}        {isEditFormVisible && selectedCourse && (
           <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
             <div className="bg-white dark:bg-surface-800 rounded-xl shadow-xl max-w-md w-full">
               <div className="p-4 border-b border-surface-200 dark:border-surface-700">
