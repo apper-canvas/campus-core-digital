@@ -79,10 +79,10 @@ const Students = () => {
   };
 
   const filteredStudents = students.filter(student => 
-    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    student.department.toLowerCase().includes(searchTerm.toLowerCase())
+    (student.Name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (student.email?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (student.studentId?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (student.department?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   // Handle deleting a student
