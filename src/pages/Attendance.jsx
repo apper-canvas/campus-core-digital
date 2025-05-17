@@ -46,6 +46,7 @@ const Attendance = () => {
     Present: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
     Absent: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
     Late: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+    Excused: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
   };
   
   // Load attendance data
@@ -63,20 +64,20 @@ const Attendance = () => {
     } finally {
       setLoading(false);
     }
-    Excused: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
   };
-
-  // Load attendance data
+  
+  // Load attendance on component mount
+  useEffect(() => {
     loadAttendance();
-    }, 500);
+  }, []);
   
   // Reload attendance when filters change
   useEffect(() => {
     if (!loading) {
       loadAttendance();
     }
-  }, [filters]);
-  }, []);
+  }, [filters, loading]);
+  
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -97,7 +98,6 @@ const Attendance = () => {
   };
 
   const handleAddAttendance = async (e) => {
-  const handleAddAttendance = (e) => {
     e.preventDefault();
     
     // Validation
@@ -130,19 +130,18 @@ const Attendance = () => {
       console.error('Error adding attendance record:', err);
       toast.error('Failed to add attendance record');
     }
-    setAttendance(prev => [...prev, added]);
     
     // Reset form and hide it
     setNewAttendance({
       studentId: '',
-    setShowAddForm(false);
+      studentName: '',
+      courseId: '',
       courseName: '',
       date: new Date().toISOString().split('T')[0],
       status: 'Present',
       notes: ''
     });
     setShowAddForm(false);
-    toast.success("Attendance record added successfully");
   };
 
   return (
@@ -283,11 +282,6 @@ const Attendance = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-200 dark:divide-surface-700">
-                {filteredAttendance.map((record) => (
-                  <tr key={record.id} className="hover:bg-surface-50 dark:hover:bg-surface-800/60">
-                    <td className="px-4 py-3">
-                      <div className="font-medium">{record.studentName}</div>
-                      <div className="text-sm text-surface-500">ID: {record.studentId}</div>
                 {attendance.map((record) => (
                   <tr key={record.Id} className="hover:bg-surface-50 dark:hover:bg-surface-800/60">
                       <div>{record.courseName}</div>
