@@ -9,6 +9,7 @@ import Students from './pages/Students.jsx'
 import Courses from './pages/Courses.jsx'
 import Analytics from './pages/Analytics.jsx'
 import Schedule from './pages/Schedule.jsx'
+import Attendance from './pages/Attendance.jsx'
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(
@@ -60,6 +61,7 @@ function App() {
           <Route path="/students" element={<Students />} />
           <Route path="/courses" element={<Courses />} />
           <Route path="/schedule" element={<Schedule />} />
+          <Route path="/attendance" element={<Attendance />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         
