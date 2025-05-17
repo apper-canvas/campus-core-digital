@@ -100,13 +100,11 @@ const Home = () => {
                     </Link>
                   ) : item.id === 'courses' ? (
                     <Link
-                      to="/courses"
-                    <Link
-                      to="/analytics"
+                      to="/courses" 
                       className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
                                 border-transparent text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700"
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon className="w-5 h-5" /> 
                       <span className="font-medium">{item.label}</span>
                     </Link>
                   ) : (
@@ -153,9 +151,7 @@ const Home = () => {
                   ) : item.id === 'courses' ? (
                     <Link
                       to="/courses"
-                    <Link
-                      to="/analytics"
-                      className="flex flex-col items-center justify-center space-y-1
+                      className="flex flex-col items-center justify-center space-y-1 
                                 text-surface-600 dark:text-surface-400"
                     >
                       <Icon className="w-5 h-5" />
