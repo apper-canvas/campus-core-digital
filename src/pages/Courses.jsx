@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { toast } from 'react-toastify'
 import { getIcon } from '../utils/iconUtils.js'
 import BackButton from '../components/BackButton.jsx'
-import { fetchCourses, createCourse } from '../services/CourseService.js'
+import { fetchCourses, createCourse, updateCourse } from '../services/CourseService.js'
 
 const Courses = () => {
   const [courses, setCourses] = useState([])
@@ -19,6 +19,15 @@ const Courses = () => {
     status: 'active'
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedCourse, setSelectedCourse] = useState(null)
+  const [isEditFormVisible, setIsEditFormVisible] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    code: '',
+    credits: '',
+    department: '',
+    instructor: '',
+    schedule: '',
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -53,11 +62,21 @@ const Courses = () => {
   const CalendarIcon = getIcon('Calendar')
   const BookmarkIcon = getIcon('Bookmark')
   const RefreshCwIcon = getIcon('RefreshCw')
+  const PencilIcon = getIcon('Pencil')
+  const TickIcon = getIcon('Check')
   const AlertCircleIcon = getIcon('AlertCircle')
   
   const handleInputChange = (e) => {
     const { name, value } = e.target
     setNewCourse(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target
+    setEditFormData(prev => ({
       ...prev,
       [name]: value
     }))
@@ -110,6 +129,57 @@ const Courses = () => {
       })
       
       setIsAddFormVisible(false)
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleOpenEditForm = (course) => {
+    setSelectedCourse(course)
+    setEditFormData({
+      name: course.Name,
+      code: course.code,
+      credits: course.credits,
+      department: course.department,
+      instructor: course.instructor || '',
+      schedule: course.schedule || '',
+      maxEnrollment: course.maxEnrollment || '',
+      status: course.status || 'active'
+    })
+    setIsEditFormVisible(true)
+  }
+
+  const handleUpdateCourse = async (e) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    
+    // Validate form data
+    if (!editFormData.code || !editFormData.name || !editFormData.credits || !editFormData.department) {
+      toast.error("Please fill in all required fields")
+      setIsSubmitting(false)
+      return
+    }
+    
+    try {
+      const response = await updateCourse(selectedCourse.Id, editFormData)
+      
+      if (response && response.success) {
+        toast.success(`Course ${editFormData.code} has been updated successfully!`)
+        
+        // Reload all courses to get the updated list
+        loadCourses()
+      } else {
+        toast.error(response.message || 'Failed to update course')
+      }
+    } catch (err) {
+      console.error('Error updating course:', err)
+      toast.error('Failed to update course')
+    } finally {
+      // Reset form
+      setSelectedCourse(null)
+      setEditFormData({
+        name: '', code: '', credits: '', department: '', instructor: '', schedule: '', maxEnrollment: '', status: 'active'
+      })
+      setIsEditFormVisible(false)
       setIsSubmitting(false)
     }
   }
@@ -178,6 +248,13 @@ const Courses = () => {
                         <p className="text-surface-600 dark:text-surface-400">{course.Name}</p>
                       </div>
                     </div>
+                    <div className="flex items-center">
+                      <button 
+                        onClick={() => handleOpenEditForm(course)}
+                        className="text-surface-500 hover:text-primary mr-2 p-1 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                      </button>
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       course.status === 'active'
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
@@ -185,6 +262,7 @@ const Courses = () => {
                     }`}>
                       {course.status.charAt(0).toUpperCase() + course.status.slice(1)}
                     </span>
+                    </div>
                   </div>
                   
                   <div className="space-y-2 mb-4">
@@ -259,6 +337,65 @@ const Courses = () => {
               </form>
             </div>
           </div>
+
+        {/* Edit Course Form Modal */}
+        {isEditFormVisible && selectedCourse && (
+          <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-surface-800 rounded-xl shadow-xl max-w-md w-full">
+              <div className="p-4 border-b border-surface-200 dark:border-surface-700">
+                <h2 className="text-xl font-bold">Edit Course</h2>
+              </div>
+              
+              <form onSubmit={handleUpdateCourse} className="p-4 space-y-4">
+                <div>
+                  <label htmlFor="edit-code" className="label">Course Code <span className="text-red-500">*</span></label>
+                  <input id="edit-code" name="code" type="text" className="input" value={editFormData.code} onChange={handleEditInputChange} required />
+                </div>
+                <div>
+                  <label htmlFor="edit-name" className="label">Course Name <span className="text-red-500">*</span></label>
+                  <input id="edit-name" name="name" type="text" className="input" value={editFormData.name} onChange={handleEditInputChange} required />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="edit-credits" className="label">Credits <span className="text-red-500">*</span></label>
+                    <input id="edit-credits" name="credits" type="number" min="1" className="input" value={editFormData.credits} onChange={handleEditInputChange} required />
+                  </div>
+                  <div>
+                    <label htmlFor="edit-department" className="label">Department <span className="text-red-500">*</span></label>
+                    <input id="edit-department" name="department" type="text" className="input" value={editFormData.department} onChange={handleEditInputChange} required />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="edit-instructor" className="label">Instructor</label>
+                  <input id="edit-instructor" name="instructor" type="text" className="input" value={editFormData.instructor} onChange={handleEditInputChange} />
+                </div>
+                <div>
+                  <label htmlFor="edit-schedule" className="label">Schedule</label>
+                  <input id="edit-schedule" name="schedule" type="text" className="input" value={editFormData.schedule} onChange={handleEditInputChange} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="edit-maxEnrollment" className="label">Max Enrollment</label>
+                    <input id="edit-maxEnrollment" name="maxEnrollment" type="number" min="0" className="input" value={editFormData.maxEnrollment} onChange={handleEditInputChange} />
+                  </div>
+                  <div>
+                    <label htmlFor="edit-status" className="label">Status</label>
+                    <select id="edit-status" name="status" className="input" value={editFormData.status} onChange={handleEditInputChange}>
+                      <option value="active">Active</option>
+                      <option value="inactive">Inactive</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="pt-2 flex justify-end space-x-3 border-t border-surface-200 dark:border-surface-700">
+                  <button type="button" onClick={() => setIsEditFormVisible(false)} className="btn btn-outline" disabled={isSubmitting}>Cancel</button>
+                  <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                    {isSubmitting ? <RefreshCwIcon className="w-5 h-5 animate-spin" /> : 'Update Course'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
         )}
       </div>
     </motion.div>
