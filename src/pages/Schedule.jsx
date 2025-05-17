@@ -62,6 +62,7 @@ const Schedule = () => {
     } finally {
       setLoading(false);
     }
+  };
   
   // Handle form input changes
   const handleInputChange = (e) => {
