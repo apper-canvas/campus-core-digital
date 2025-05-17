@@ -28,6 +28,9 @@ const Courses = () => {
     department: '',
     instructor: '',
     schedule: '',
+    maxEnrollment: '',
+    status: 'active'
+  })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
