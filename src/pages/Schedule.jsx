@@ -62,8 +62,6 @@ const Schedule = () => {
     } finally {
       setLoading(false);
     }
-    loadSchedules();
-  }, []);
   
   // Handle form input changes
   const handleInputChange = (e) => {
