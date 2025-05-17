@@ -284,9 +284,13 @@ const Attendance = () => {
               <tbody className="divide-y divide-surface-200 dark:divide-surface-700">
                 {attendance.map((record) => (
                   <tr key={record.Id} className="hover:bg-surface-50 dark:hover:bg-surface-800/60">
+                    <td className="px-4 py-3">
+                      <div>{record.studentName}</div>
+                      <div className="text-sm text-surface-500">ID: {record.studentId}</div>
+                    </td>
+                    <td className="px-4 py-3">
                       <div>{record.courseName}</div>
                       <div className="text-sm text-surface-500">ID: {record.courseId}</div>
-                    </td>
                     <td className="px-4 py-3">{record.date}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusBadges[record.status]}`}>
