@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { motion } from 'framer-motion'
 import { toast } from 'react-toastify'
-import { toast } from 'react-toastify'
+import { BellIcon, UserCircleIcon, UsersIcon } from 'lucide-react'
 import { getIcon } from '../utils/iconUtils.js'
 import GradeDistributionChart from '../components/charts/GradeDistributionChart.jsx'
 import CoursePerformanceChart from '../components/charts/CoursePerformanceChart.jsx'
@@ -11,6 +10,7 @@ import { analyticsData, addAnalytics } from '../data/analyticsData'
 import ReportGenerator from '../components/ReportGenerator.jsx'
 import BackButton from '../components/BackButton.jsx'
 
+function Analytics() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [newAnalytics, setNewAnalytics] = useState({
     id: '',
@@ -21,6 +21,8 @@ import BackButton from '../components/BackButton.jsx'
     metrics: {}
   })
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTimeframe, setSelectedTimeframe] = useState('semester')
+  const [showReportGenerator, setShowReportGenerator] = useState(false)
 
   // Filter the analytics data based on search query
   const filteredAnalytics = analyticsData.filter(
@@ -97,7 +99,12 @@ import BackButton from '../components/BackButton.jsx'
   }
 
   // Icons
-  const [showReportGenerator, setShowReportGenerator] = useState(false)
+  const handleExportData = () => {
+    // Implementation for exporting data
+    toast.success('Data exported successfully')
+  }
+
+  // Icons
   const PlusIcon = getIcon('Plus')
   const SearchIcon = getIcon('Search')
   const XIcon = getIcon('X')
@@ -164,7 +171,7 @@ import BackButton from '../components/BackButton.jsx'
       </div>
     </div>
   )
-  
+
   // Icons
   const GraduationCapIcon = getIcon('GraduationCap')
   const LineChartIcon = getIcon('LineChart')
@@ -172,7 +179,17 @@ import BackButton from '../components/BackButton.jsx'
   const PercentIcon = getIcon('Percent')
   const AwardIcon = getIcon('Award')
   const DownloadIcon = getIcon('Download')
-      
+  const ClipboardIcon = getIcon('Clipboard')
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-screen flex flex-col"
+    >
+      {/* Header */}
+      <header className="bg-white dark:bg-surface-800 shadow-sm border-b border-surface-200 dark:border-surface-700 sticky top-0 z-40">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold mb-2">Analytics Dashboard</h1>
@@ -227,28 +244,6 @@ import BackButton from '../components/BackButton.jsx'
           </tbody>
         </table>
       </div>
-  const ClipboardIcon = getIcon('Clipboard')
-      {/* Analytics Charts */}
-      <h2 className="text-xl font-bold mb-4">Key Insights</h2>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <StudentProgressionChart />
-        <CoursePerformanceChart />
-      </div>
-      
-      <div className="mb-6">
-  return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      
-      {/* Add Form Modal */}
-      {showAddForm && renderAddForm()}
-      
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="min-h-screen flex flex-col"
-    >
-      {/* Header */}
-      <header className="bg-white dark:bg-surface-800 shadow-sm border-b border-surface-200 dark:border-surface-700 sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <GraduationCapIcon className="w-8 h-8 text-primary" />
@@ -391,6 +386,7 @@ import BackButton from '../components/BackButton.jsx'
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Grade Distribution Chart */}
+            <div className="mb-6">
             <GradeDistributionChart timeframe={selectedTimeframe} />
             
             {/* Course Performance Chart */}
@@ -399,6 +395,11 @@ import BackButton from '../components/BackButton.jsx'
           
           {/* Student Progression Chart */}
           <StudentProgressionChart timeframe={selectedTimeframe} />
+          </div>
+          
+          {/* Add Form Modal */}
+          {showAddForm && renderAddForm()}
+          
           
           {/* Report Generator Modal */}
           {showReportGenerator && (
