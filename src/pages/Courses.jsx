@@ -341,6 +341,7 @@ const Courses = () => {
             </div>
           </div>
 
+        
         {/* Edit Course Form Modal */}
         {isEditFormVisible && selectedCourse && (
           <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
@@ -398,7 +399,7 @@ const Courses = () => {
               </form>
             </div>
           </div>
-        )}
+        
         )}
       </div>
     </motion.div>
