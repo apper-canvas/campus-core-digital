@@ -42,10 +42,16 @@ let analyticsData = [
 // Add a new analytics
 export function addAnalytics(analytics) {
   analyticsData.unshift(analytics);
-      counts: [245, 386, 192, 63, 24],
+}
 
 // Export the analytics data
 export { analyticsData };
+
+// Grade distribution data
+export const getGradeDistribution = (timeframe) => {
+  const distributions = {
+    semester: {
+      counts: [245, 386, 192, 63, 24],
       percentages: [26.9, 42.4, 21.1, 6.9, 2.7]
     },
     year: {
