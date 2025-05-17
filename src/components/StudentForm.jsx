@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { getIcon } from '../utils/iconUtils.js';
-import { generateId } from '../data/studentsData.js';
 
 const StudentForm = ({ onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -81,10 +80,10 @@ const StudentForm = ({ onSubmit, onCancel }) => {
     setIsSubmitting(true);
     
     try {
-      // Create a new student object with generated ID
+      // Create a new student object
       const newStudent = {
-        ...formData,
-        id: generateId()
+        name: formData.name,
+        ...formData
       };
       
       // Simulate API call delay

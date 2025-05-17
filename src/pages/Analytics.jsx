@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { toast } from 'react-toastify'
 import { BellIcon, UserCircleIcon, UsersIcon } from 'lucide-react'
@@ -6,11 +6,12 @@ import { getIcon } from '../utils/iconUtils.js'
 import GradeDistributionChart from '../components/charts/GradeDistributionChart.jsx'
 import CoursePerformanceChart from '../components/charts/CoursePerformanceChart.jsx'
 import StudentProgressionChart from '../components/charts/StudentProgressionChart.jsx'
-import { analyticsData, addAnalytics } from '../data/analyticsData'
+import { fetchAnalytics, createAnalytics } from '../services/AnalyticsService.js'
 import ReportGenerator from '../components/ReportGenerator.jsx'
 import BackButton from '../components/BackButton.jsx'
 
 function Analytics() {
+  const [analyticsData, setAnalyticsData] = useState([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [newAnalytics, setNewAnalytics] = useState({
     id: '',
@@ -23,14 +24,33 @@ function Analytics() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedTimeframe, setSelectedTimeframe] = useState('semester')
   const [showReportGenerator, setShowReportGenerator] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  // Load analytics data on component mount and when search query changes
+  useEffect(() => {
+    loadAnalytics()
+  }, [searchQuery])
+
+  // Load analytics data from the database
+  const loadAnalytics = async () => {
+    setLoading(true)
+    setError(null)
+    
+    try {
+      const data = await fetchAnalytics(searchQuery)
+      setAnalyticsData(data || [])
+    } catch (err) {
+      console.error('Error loading analytics data:', err)
+      setError('Failed to load analytics data. Please try again.')
+      toast.error('Failed to load analytics data')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // Filter the analytics data based on search query
-  const filteredAnalytics = analyticsData.filter(
-    analytics => 
-      analytics.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      analytics.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      analytics.description.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Note: We're now filtering on the server side through the fetchAnalytics function
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -42,7 +62,7 @@ function Analytics() {
   }
 
   // Handle form submission
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     
     // Simple validation
@@ -51,51 +71,40 @@ function Analytics() {
       return
     }
     
-    // Generate a unique ID (in a real app, the backend would handle this)
-    const analyticsWithId = {
-      ...newAnalytics,
-      id: Date.now().toString()
+    try {
+      const response = await createAnalytics(newAnalytics)
+      
+      if (response && response.success) {
+        // Get the created analytics
+        if (response.results && response.results.length > 0 && response.results[0].success) {
+          const createdAnalytics = response.results[0].data
+          
+          // Update local state with the new analytics
+          setAnalyticsData(prev => [...prev, createdAnalytics])
+          toast.success("New analytics added successfully")
+        } else {
+          toast.warning('Analytics added but details not returned')
+          // Reload all analytics to get the updated list
+          loadAnalytics()
+        }
+      } else {
+        toast.error(response.message || 'Failed to add analytics')
+      }
+    } catch (err) {
+      console.error('Error adding analytics:', err)
+      toast.error('Failed to add analytics')
+    } finally {
+      // Reset form and close modal
+      setNewAnalytics({
+        id: '',
+        title: '',
+        type: 'progression',
+        description: '',
+        date: new Date().toISOString().split('T')[0],
+        metrics: {}
+      })
+      setShowAddForm(false)
     }
-    
-    // Add metrics based on the type
-    if (newAnalytics.type === 'progression') {
-      analyticsWithId.metrics = {
-        average: 75,
-        improvement: 12,
-        samples: 32
-      }
-    } else if (newAnalytics.type === 'performance') {
-      analyticsWithId.metrics = {
-        passRate: 85,
-        averageScore: 78,
-        topPerformers: 15
-      }
-    } else {
-      analyticsWithId.metrics = {
-        aCount: 12,
-        bCount: 18,
-        cCount: 8,
-        dCount: 4,
-        fCount: 2
-      }
-    }
-    
-    // Add the new analytics
-    addAnalytics(analyticsWithId)
-    
-    // Reset form and close modal
-    setNewAnalytics({
-      id: '',
-      title: '',
-      type: 'progression',
-      description: '',
-      date: new Date().toISOString().split('T')[0],
-      metrics: {}
-    })
-    setShowAddForm(false)
-    
-    // Show success message
-    toast.success("New analytics added successfully")
   }
 
   // Icons
@@ -109,6 +118,8 @@ function Analytics() {
   const SearchIcon = getIcon('Search')
   const XIcon = getIcon('X')
   
+  const RefreshIcon = getIcon('RefreshCw')
+  const AlertCircleIcon = getIcon('AlertCircle')
   const renderAddForm = () => (
     <div className="fixed inset-0 bg-surface-900/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-surface-800 rounded-xl shadow-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
@@ -222,28 +233,60 @@ function Analytics() {
       </div>
       
       {/* Analytics List */}
-      <div className="mb-8 overflow-x-auto bg-white dark:bg-surface-800 rounded-xl shadow-card border border-surface-200 dark:border-surface-700">
-        <table className="min-w-full divide-y divide-surface-200 dark:divide-surface-700">
-          <thead className="bg-surface-50 dark:bg-surface-800">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Title</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Type</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Description</th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Date</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-surface-800 divide-y divide-surface-200 dark:divide-surface-700">
-            {filteredAnalytics.map((item) => (
-              <tr key={item.id} className="hover:bg-surface-50 dark:hover:bg-surface-700">
-                <td className="px-6 py-4 whitespace-nowrap">{item.title}</td>
-                <td className="px-6 py-4 whitespace-nowrap capitalize">{item.type}</td>
-                <td className="px-6 py-4">{item.description}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{new Date(item.date).toLocaleDateString()}</td>
+      {loading ? (
+        <div className="card flex items-center justify-center py-8 mb-8">
+          <div className="flex flex-col items-center">
+            <RefreshIcon className="w-10 h-10 text-primary animate-spin mb-4" />
+            <p>Loading analytics data...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="card bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 flex items-center justify-center py-8 mb-8">
+          <div className="flex flex-col items-center">
+            <AlertCircleIcon className="w-10 h-10 text-red-500 mb-4" />
+            <p className="text-red-700 dark:text-red-400">{error}</p>
+            <button 
+              onClick={loadAnalytics}
+              className="mt-4 btn bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-800/50 dark:text-red-300 dark:hover:bg-red-800/70"
+            >
+              <RefreshIcon className="w-4 h-4 mr-2" />
+              Retry
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="mb-8 overflow-x-auto bg-white dark:bg-surface-800 rounded-xl shadow-card border border-surface-200 dark:border-surface-700">
+          <table className="min-w-full divide-y divide-surface-200 dark:divide-surface-700">
+            <thead className="bg-surface-50 dark:bg-surface-800">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Title</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Type</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Description</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-surface-500 uppercase tracking-wider">Date</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="bg-white dark:bg-surface-800 divide-y divide-surface-200 dark:divide-surface-700">
+              {analyticsData.length > 0 ? (
+                analyticsData.map((item) => (
+                  <tr key={item.Id} className="hover:bg-surface-50 dark:hover:bg-surface-700">
+                    <td className="px-6 py-4 whitespace-nowrap">{item.title}</td>
+                    <td className="px-6 py-4 whitespace-nowrap capitalize">{item.type}</td>
+                    <td className="px-6 py-4">{item.description}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{new Date(item.date).toLocaleDateString()}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="px-6 py-8 text-center text-surface-500">
+                    No analytics data found. Add your first analytics report using the button above.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+      
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <GraduationCapIcon className="w-8 h-8 text-primary" />
@@ -386,9 +429,9 @@ function Analytics() {
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Grade Distribution Chart */}
-            <div className="mb-6">
-            <GradeDistributionChart timeframe={selectedTimeframe} />
-            
+        </div>
+        
+        {/* Charts Section */}
             {/* Course Performance Chart */}
             <CoursePerformanceChart timeframe={selectedTimeframe} />
           </div>

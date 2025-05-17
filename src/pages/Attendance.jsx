@@ -3,10 +3,11 @@ import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { getIcon } from '../utils/iconUtils.js';
 import BackButton from '../components/BackButton.jsx';
-import { attendanceData, addAttendance } from '../data/attendanceData.js';
+import { fetchAttendance, createAttendance } from '../services/AttendanceService.js';
 
 const Attendance = () => {
   const [attendance, setAttendance] = useState([]);
+  const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [filters, setFilters] = useState({
@@ -36,6 +37,8 @@ const Attendance = () => {
   const SearchIcon = getIcon('Search');
   const CalendarIcon = getIcon('Calendar');
   const UserIcon = getIcon('User');
+  const AlertCircleIcon = getIcon('AlertCircle');
+  const RefreshIcon = getIcon('RefreshCw');
   const BookIcon = getIcon('Book');
 
   // Status badges
@@ -43,16 +46,36 @@ const Attendance = () => {
     Present: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
     Absent: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
     Late: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
+  };
+  
+  // Load attendance data
+  const loadAttendance = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await fetchAttendance(filters);
+      setAttendance(data || []);
+    } catch (err) {
+      console.error('Error loading attendance records:', err);
+      setError('Failed to load attendance records. Please try again.');
+      toast.error('Failed to load attendance records');
+    } finally {
+      setLoading(false);
+    }
     Excused: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
   };
 
   // Load attendance data
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setAttendance(attendanceData);
-      setLoading(false);
+    loadAttendance();
     }, 500);
+  
+  // Reload attendance when filters change
+  useEffect(() => {
+    if (!loading) {
+      loadAttendance();
+    }
+  }, [filters]);
   }, []);
 
   // Handle form input changes
@@ -73,21 +96,7 @@ const Attendance = () => {
     }));
   };
 
-  // Apply filters to attendance data
-  const filteredAttendance = attendance.filter(record => {
-    return (
-      (filters.student === '' || 
-        record.studentName.toLowerCase().includes(filters.student.toLowerCase()) ||
-        record.studentId.toString().includes(filters.student)) &&
-      (filters.course === '' || 
-        record.courseName.toLowerCase().includes(filters.course.toLowerCase()) ||
-        record.courseId.toString().includes(filters.course)) &&
-      (filters.date === '' || record.date === filters.date) &&
-      (filters.status === '' || record.status === filters.status)
-    );
-  });
-
-  // Add new attendance record
+  const handleAddAttendance = async (e) => {
   const handleAddAttendance = (e) => {
     e.preventDefault();
     
@@ -98,16 +107,35 @@ const Attendance = () => {
       toast.error("Please fill all required fields");
       return;
     }
-    
-    // Add new attendance
-    const added = addAttendance(newAttendance);
+    try {
+      const response = await createAttendance(newAttendance);
+      
+      if (response && response.success) {
+        // Get the created attendance record
+        if (response.results && response.results.length > 0 && response.results[0].success) {
+          const createdAttendance = response.results[0].data;
+          
+          // Update local state with the new attendance record
+          setAttendance(prev => [...prev, createdAttendance]);
+          toast.success("Attendance record added successfully");
+        } else {
+          toast.warning('Attendance record added but details not returned');
+          // Reload all attendance records to get the updated list
+          loadAttendance();
+        }
+      } else {
+        toast.error(response.message || 'Failed to add attendance record');
+      }
+    } catch (err) {
+      console.error('Error adding attendance record:', err);
+      toast.error('Failed to add attendance record');
+    }
     setAttendance(prev => [...prev, added]);
     
     // Reset form and hide it
     setNewAttendance({
       studentId: '',
-      studentName: '',
-      courseId: '',
+    setShowAddForm(false);
       courseName: '',
       date: new Date().toISOString().split('T')[0],
       status: 'Present',
@@ -213,17 +241,34 @@ const Attendance = () => {
 
       {/* Attendance Records Table */}
       <div className="card">
-        <h2 className="text-lg font-semibold mb-4">Attendance Records</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Attendance Records</h2>
+          {!loading && !error && (
+            <button 
+              onClick={loadAttendance}
+              className="text-primary hover:text-primary-dark p-1 rounded-full hover:bg-surface-100 dark:hover:bg-surface-700"
+              title="Refresh data"
+            >
+              <RefreshIcon className="w-5 h-5" />
+            </button>
+          )}
+        </div>
         
         {loading ? (
           <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-primary border-r-transparent"></div>
+            <RefreshIcon className="inline-block animate-spin h-8 w-8 text-primary mb-2" />
             <p className="mt-2 text-surface-500">Loading attendance records...</p>
           </div>
-        ) : filteredAttendance.length === 0 ? (
+        ) : error ? (
+          <div className="text-center py-8 text-red-500">
+            <AlertCircleIcon className="w-10 h-10 mx-auto mb-3" />
+            <p>{error}</p>
+            <button onClick={loadAttendance} className="mt-4 btn bg-red-100 text-red-600 hover:bg-red-200">Retry</button>
+          </div>
+        ) : attendance.length === 0 ? (
           <div className="text-center py-8 text-surface-500">
             <SearchIcon className="w-10 h-10 mx-auto mb-3 text-surface-400" />
-            <p>No attendance records found matching your filters.</p>
+            <p>No attendance records found.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -243,8 +288,8 @@ const Attendance = () => {
                     <td className="px-4 py-3">
                       <div className="font-medium">{record.studentName}</div>
                       <div className="text-sm text-surface-500">ID: {record.studentId}</div>
-                    </td>
-                    <td className="px-4 py-3">
+                {attendance.map((record) => (
+                  <tr key={record.Id} className="hover:bg-surface-50 dark:hover:bg-surface-800/60">
                       <div>{record.courseName}</div>
                       <div className="text-sm text-surface-500">ID: {record.courseId}</div>
                     </td>
@@ -267,11 +312,128 @@ const Attendance = () => {
           </div>
         )}
       </div>
+      
+      {/* Add Attendance Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-surface-800 rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-4 border-b border-surface-200 dark:border-surface-700">
+              <h2 className="text-xl font-bold">Add New Attendance Record</h2>
+            </div>
+            
+            <form onSubmit={handleAddAttendance} className="p-4 space-y-4">
+              <div>
+                <label htmlFor="studentName" className="label">Student Name <span className="text-red-500">*</span></label>
+                <input 
+                  type="text" 
+                  id="studentName" 
+                  name="studentName" 
+                  value={newAttendance.studentName} 
+                  onChange={handleInputChange} 
+                  className="input" 
+                  required 
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="studentId" className="label">Student ID <span className="text-red-500">*</span></label>
+                <input 
+                  type="text" 
+                  id="studentId" 
+                  name="studentId" 
+                  value={newAttendance.studentId} 
+                  onChange={handleInputChange} 
+                  className="input" 
+                  required 
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="courseName" className="label">Course Name <span className="text-red-500">*</span></label>
+                <input 
+                  type="text" 
+                  id="courseName" 
+                  name="courseName" 
+                  value={newAttendance.courseName} 
+                  onChange={handleInputChange} 
+                  className="input" 
+                  required 
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="courseId" className="label">Course ID <span className="text-red-500">*</span></label>
+                <input 
+                  type="text" 
+                  id="courseId" 
+                  name="courseId" 
+                  value={newAttendance.courseId} 
+                  onChange={handleInputChange} 
+                  className="input" 
+                  required 
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="date" className="label">Date <span className="text-red-500">*</span></label>
+                  <input 
+                    type="date" 
+                    id="date" 
+                    name="date" 
+                    value={newAttendance.date} 
+                    onChange={handleInputChange} 
+                    className="input" 
+                    required 
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="status" className="label">Status <span className="text-red-500">*</span></label>
+                  <select 
+                    id="status" 
+                    name="status" 
+                    value={newAttendance.status} 
+                    onChange={handleInputChange} 
+                    className="input" 
+                    required
+                  >
+                    <option value="Present">Present</option>
+                    <option value="Absent">Absent</option>
+                    <option value="Late">Late</option>
+                    <option value="Excused">Excused</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label htmlFor="notes" className="label">Notes</label>
+                <textarea 
+                  id="notes" 
+                  name="notes" 
+                  value={newAttendance.notes} 
+                  onChange={handleInputChange} 
+                  className="input min-h-[80px]"
+                ></textarea>
+              </div>
+              
+              <div className="pt-2 flex justify-end space-x-3 border-t border-surface-200 dark:border-surface-700">
+                <button 
+                  type="button" 
+                  onClick={() => setShowAddForm(false)} 
+                  className="btn btn-outline"
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Add Attendance
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
-      {/* Add Attendance Modal - would be implemented here */}
-      {/* For brevity, I'm not including the full modal implementation */}
-      {/* The modal would contain a form similar to the fields in newAttendance state */}
-      {/* with validation and the handleAddAttendance function */}
     </motion.div>
   );
 };

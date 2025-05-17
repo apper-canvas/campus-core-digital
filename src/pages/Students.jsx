@@ -1,19 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-toastify';
 import { getIcon } from '../utils/iconUtils.js';
 import StudentForm from '../components/StudentForm.jsx';
-import { initialStudents } from '../data/studentsData.js';
+import { fetchStudents, createStudent, deleteStudent } from '../services/StudentService.js';
 import BackButton from '../components/BackButton.jsx';
 
 const Students = () => {
-  const [students, setStudents] = useState(initialStudents);
+  const [students, setStudents] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Load students on component mount
+  useEffect(() => {
+    loadStudents();
+  }, []);
 
   // Icons
   const UserPlusIcon = getIcon('UserPlus');
   const SearchIcon = getIcon('Search');
+  const RefreshIcon = getIcon('RefreshCw');
+  const AlertCircleIcon = getIcon('AlertCircle');
+  const CheckCircleIcon = getIcon('CheckCircle');
   const UserCircleIcon = getIcon('UserCircle');
   const EditIcon = getIcon('Edit');
   const TrashIcon = getIcon('Trash');
@@ -22,8 +32,49 @@ const Students = () => {
   const GraduationCapIcon = getIcon('GraduationCap');
   const ActivityIcon = getIcon('Activity');
 
-  const handleAddStudent = (newStudent) => {
-    setStudents(prev => [newStudent, ...prev]);
+  // Load students from the database
+  const loadStudents = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const data = await fetchStudents();
+      setStudents(data || []);
+    } catch (err) {
+      console.error('Error loading students:', err);
+      setError('Failed to load students. Please try again.');
+      toast.error('Failed to load students');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle adding a new student
+  const handleAddStudent = async (newStudent) => {
+    try {
+      const response = await createStudent(newStudent);
+      
+      if (response && response.success) {
+        // Get the created student with ID
+        if (response.results && response.results.length > 0 && response.results[0].success) {
+          const createdStudent = response.results[0].data;
+          
+          // Update local state with the new student
+          setStudents(prev => [createdStudent, ...prev]);
+          toast.success('Student added successfully');
+        } else {
+          toast.warning('Student added but details not returned');
+          // Reload all students to get the updated list
+          loadStudents();
+        }
+      } else {
+        toast.error(response.message || 'Failed to add student');
+      }
+    } catch (err) {
+      console.error('Error adding student:', err);
+      toast.error('Failed to add student');
+    }
+    
     setShowForm(false);
   };
 
@@ -34,10 +85,25 @@ const Students = () => {
     student.department.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDeleteStudent = (id) => {
+  // Handle deleting a student
+  const handleDeleteStudent = async (id) => {
     if (window.confirm('Are you sure you want to delete this student?')) {
-      setStudents(prev => prev.filter(student => student.id !== id));
-      toast.success('Student deleted successfully');
+      try {
+        const response = await deleteStudent(id);
+        
+        if (response && response.success) {
+          // Remove student from local state
+          setStudents(prev => prev.filter(student => student.Id !== id));
+          toast.success('Student deleted successfully');
+        } else {
+          toast.error(response.message || 'Failed to delete student');
+        }
+      } catch (err) {
+        console.error('Error deleting student:', err);
+        toast.error('Failed to delete student');
+      }
+    } else {
+      toast.info('Delete cancelled');
     }
   };
 
@@ -106,13 +172,40 @@ const Students = () => {
             onCancel={() => setShowForm(false)} 
           />
         )}
-
+        
+        {/* Loading/Error states */}
+        {loading && (
+          <div className="card flex items-center justify-center py-8">
+            <div className="flex flex-col items-center">
+              <RefreshIcon className="w-10 h-10 text-primary animate-spin mb-4" />
+              <p>Loading students...</p>
+            </div>
+          </div>
+        )}
+        
+        {error && !loading && (
+          <div className="card bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 flex items-center justify-center py-8">
+            <div className="flex flex-col items-center">
+              <AlertCircleIcon className="w-10 h-10 text-red-500 mb-4" />
+              <p className="text-red-700 dark:text-red-400">{error}</p>
+              <button 
+                onClick={loadStudents}
+                className="mt-4 btn bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-800/50 dark:text-red-300 dark:hover:bg-red-800/70"
+              >
+                <RefreshIcon className="w-4 h-4 mr-2" />
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+        
         {/* Students List */}
-        <div className="grid grid-cols-1 gap-4">
-          {filteredStudents.length > 0 ? (
+        {!loading && !error && (
+          <div className="grid grid-cols-1 gap-4">
+            {filteredStudents.length > 0 ? (
             filteredStudents.map(student => (
               <motion.div
-                key={student.id}
+                key={student.Id}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="card flex flex-col md:flex-row md:items-center"
@@ -125,7 +218,7 @@ const Students = () => {
                 
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div>
-                    <h3 className="font-bold text-lg">{student.name}</h3>
+                    <h3 className="font-bold text-lg">{student.Name}</h3>
                     <div className="flex items-center text-surface-600 dark:text-surface-400 text-sm">
                       <span className="font-medium mr-2">{student.studentId}</span>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -172,7 +265,7 @@ const Students = () => {
                       </button>
                       <button
                         className="btn py-1 px-2 bg-red-100 hover:bg-red-200 text-red-600 hover:text-red-700 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/50"
-                        onClick={() => handleDeleteStudent(student.id)}
+                            onClick={() => handleDeleteStudent(student.Id)}
                       >
                         <TrashIcon className="w-4 h-4" />
                       </button>
@@ -201,6 +294,7 @@ const Students = () => {
             </div>
           )}
         </div>
+      )}
       </main>
     </motion.div>
   );

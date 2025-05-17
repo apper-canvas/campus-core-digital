@@ -4,11 +4,11 @@ import { toast } from 'react-toastify';
 import { getIcon } from '../utils/iconUtils.js';
 import BackButton from '../components/BackButton.jsx';
 import { 
-  getAllSchedules,
-  addSchedule,
-  updateSchedule,
-  deleteSchedule
-} from '../data/scheduleData.js';
+  fetchSchedules, 
+  createSchedule, 
+  updateSchedule, 
+  deleteSchedule 
+} from '../services/ScheduleService.js';
 
 const Schedule = () => {
   const [schedules, setSchedules] = useState([]);
@@ -26,6 +26,8 @@ const Schedule = () => {
     startDate: '',
     endDate: ''
   });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   
   // Icons
   const CalendarIcon = getIcon('Calendar');
@@ -37,14 +39,29 @@ const Schedule = () => {
   const UserIcon = getIcon('User');
   const BookOpenIcon = getIcon('BookOpen');
   const XIcon = getIcon('X');
+  const AlertCircleIcon = getIcon('AlertCircle');
+  const RefreshIcon = getIcon('RefreshCw');
   
   // Load schedules on component mount
   useEffect(() => {
-    const loadSchedules = () => {
-      const data = getAllSchedules();
-      setSchedules(data);
-    };
+    loadSchedules();
+  }, []);
+  
+  // Function to load schedules from the database
+  const loadSchedules = async () => {
+    setLoading(true);
+    setError(null);
     
+    try {
+      const data = await fetchSchedules();
+      setSchedules(data || []);
+    } catch (err) {
+      console.error('Error loading schedules:', err);
+      setError('Failed to load schedules. Please try again.');
+      toast.error('Failed to load schedules');
+    } finally {
+      setLoading(false);
+    }
     loadSchedules();
   }, []);
   
@@ -95,7 +112,7 @@ const Schedule = () => {
   };
   
   // Handle add schedule submission
-  const handleAddSubmit = (e) => {
+  const handleAddSubmit = async (e) => {
     e.preventDefault();
     
     // Validate form
@@ -104,16 +121,35 @@ const Schedule = () => {
       return;
     }
     
-    // Add new schedule
-    const newSchedule = addSchedule(formData);
-    setSchedules(prev => [...prev, newSchedule]);
-    setIsAddModalOpen(false);
-    
-    toast.success("Schedule added successfully");
+    try {
+      const response = await createSchedule(formData);
+      
+      if (response && response.success) {
+        // Get the created schedule
+        if (response.results && response.results.length > 0 && response.results[0].success) {
+          const createdSchedule = response.results[0].data;
+          
+          // Update local state with the new schedule
+          setSchedules(prev => [...prev, createdSchedule]);
+          toast.success("Schedule added successfully");
+        } else {
+          toast.warning('Schedule added but details not returned');
+          // Reload all schedules to get the updated list
+          loadSchedules();
+        }
+      } else {
+        toast.error(response.message || 'Failed to add schedule');
+      }
+    } catch (err) {
+      console.error('Error adding schedule:', err);
+      toast.error('Failed to add schedule');
+    } finally {
+      setIsAddModalOpen(false);
+    }
   };
   
   // Handle edit schedule submission
-  const handleEditSubmit = (e) => {
+  const handleEditSubmit = async (e) => {
     e.preventDefault();
     
     // Validate form
@@ -123,25 +159,54 @@ const Schedule = () => {
     }
     
     // Update schedule
-    const updatedSchedule = { ...formData, id: currentSchedule.id };
-    updateSchedule(updatedSchedule);
-    
-    setSchedules(prev => 
-      prev.map(schedule => 
-        schedule.id === currentSchedule.id ? updatedSchedule : schedule
-      )
-    );
-    
-    setIsEditModalOpen(false);
-    toast.success("Schedule updated successfully");
+    try {
+      const response = await updateSchedule(currentSchedule.Id, formData);
+      
+      if (response && response.success) {
+        // Get the updated schedule
+        if (response.results && response.results.length > 0 && response.results[0].success) {
+          const updatedSchedule = response.results[0].data;
+          
+          // Update local state with the updated schedule
+          setSchedules(prev => 
+            prev.map(schedule => 
+              schedule.Id === currentSchedule.Id ? updatedSchedule : schedule
+            )
+          );
+          
+          toast.success("Schedule updated successfully");
+        } else {
+          toast.warning('Schedule updated but details not returned');
+          // Reload all schedules to get the updated list
+          loadSchedules();
+        }
+      } else {
+        toast.error(response.message || 'Failed to update schedule');
+      }
+    } catch (err) {
+      console.error('Error updating schedule:', err);
+      toast.error('Failed to update schedule');
+    } finally {
+      setIsEditModalOpen(false);
+    }
   };
   
   // Handle delete schedule
-  const handleDelete = () => {
-    deleteSchedule(currentSchedule.id);
-    setSchedules(prev => prev.filter(schedule => schedule.id !== currentSchedule.id));
+  const handleDelete = async () => {
+    try {
+      const response = await deleteSchedule(currentSchedule.Id);
+      
+      if (response && response.success) {
+        setSchedules(prev => prev.filter(schedule => schedule.Id !== currentSchedule.Id));
+        toast.success("Schedule deleted successfully");
+      } else {
+        toast.error(response.message || 'Failed to delete schedule');
+      }
+    } catch (err) {
+      console.error('Error deleting schedule:', err);
+      toast.error('Failed to delete schedule');
+    }
     setIsDeleteModalOpen(false);
-    toast.success("Schedule deleted successfully");
   };
   
   return (
@@ -175,36 +240,62 @@ const Schedule = () => {
         </div>
         
         {/* Schedule List */}
-        <div className="bg-white dark:bg-surface-800 rounded-xl shadow-md overflow-hidden border border-surface-200 dark:border-surface-700">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-surface-200 dark:divide-surface-700">
-              <thead className="bg-surface-50 dark:bg-surface-800">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Course</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Instructor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Day</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Time</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Location</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-surface-800 divide-y divide-surface-200 dark:divide-surface-700">
-                {schedules.map((schedule) => (
-                  <tr key={schedule.id} className="hover:bg-surface-50 dark:hover:bg-surface-700">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{schedule.courseName}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-surface-600 dark:text-surface-400">{schedule.instructor}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-surface-600 dark:text-surface-400">{schedule.day}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-surface-600 dark:text-surface-400">{`${schedule.startTime} - ${schedule.endTime}`}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-surface-600 dark:text-surface-400">{schedule.location}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button 
-                        onClick={() => openEditModal(schedule)} 
-                        className="text-primary hover:text-primary-dark mr-3"
-                      >
-                        <EditIcon className="w-5 h-5" />
-                      </button>
-                      <button 
-                        onClick={() => openDeleteModal(schedule)}
+        {loading && (
+          <div className="card flex items-center justify-center py-8">
+            <div className="flex flex-col items-center">
+              <RefreshIcon className="w-10 h-10 text-primary animate-spin mb-4" />
+              <p>Loading schedules...</p>
+            </div>
+          </div>
+        )}
+        
+        {error && !loading && (
+          <div className="card bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 flex items-center justify-center py-8">
+            <div className="flex flex-col items-center">
+              <AlertCircleIcon className="w-10 h-10 text-red-500 mb-4" />
+              <p className="text-red-700 dark:text-red-400">{error}</p>
+              <button 
+                onClick={loadSchedules}
+                className="mt-4 btn bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-800/50 dark:text-red-300 dark:hover:bg-red-800/70"
+              >
+                <RefreshIcon className="w-4 h-4 mr-2" />
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+        
+        {!loading && !error && (
+          <div className="bg-white dark:bg-surface-800 rounded-xl shadow-md overflow-hidden border border-surface-200 dark:border-surface-700">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-surface-200 dark:divide-surface-700">
+                <thead className="bg-surface-50 dark:bg-surface-800">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Course</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Instructor</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Day</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Time</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Location</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-surface-500 dark:text-surface-400 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-surface-800 divide-y divide-surface-200 dark:divide-surface-700">
+                  {schedules.map((schedule) => (
+                    <tr key={schedule.Id} className="hover:bg-surface-50 dark:hover:bg-surface-700">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">{schedule.courseName}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-surface-600 dark:text-surface-400">{schedule.instructor}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-surface-600 dark:text-surface-400">{schedule.day}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-surface-600 dark:text-surface-400">{`${schedule.startTime} - ${schedule.endTime}`}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-surface-600 dark:text-surface-400">{schedule.location}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button 
+                          onClick={() => openEditModal(schedule)} 
+                          className="text-primary hover:text-primary-dark mr-3"
+                        >
+                          <EditIcon className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => openDeleteModal(schedule)}
                         className="text-red-600 hover:text-red-800"
                       >
                         <TrashIcon className="w-5 h-5" />
@@ -221,8 +312,9 @@ const Schedule = () => {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       
       {/* Add/Edit Schedule Modal */}
@@ -311,7 +403,7 @@ const Schedule = () => {
           <div className="bg-white dark:bg-surface-800 rounded-xl shadow-lg max-w-md w-full p-6">
             <h3 className="text-xl font-bold mb-4">Confirm Deletion</h3>
             <p className="mb-6 text-surface-600 dark:text-surface-400">
-              Are you sure you want to delete the schedule for <span className="font-semibold">{currentSchedule?.courseName}</span>? This action cannot be undone.
+              Are you sure you want to delete the schedule for <span className="font-semibold">{currentSchedule?.courseName || 'this course'}</span>? This action cannot be undone.
             </p>
             
             <div className="flex justify-end space-x-3">
