@@ -98,6 +98,17 @@ const Home = () => {
                       <Icon className="w-5 h-5" />
                       <span className="font-medium">{item.label}</span>
                     </Link>
+                  ) : item.id === 'courses' ? (
+                    <Link
+                      to="/courses"
+                    <Link
+                      to="/analytics"
+                      className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors
+                                border-transparent text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700"
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </Link>
                   ) : (
                     <div onClick={() => setActiveTab(item.id)}
                       className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors cursor-pointer
@@ -131,6 +142,17 @@ const Home = () => {
                       <span className="text-xs font-medium">{item.label}</span>
                     </Link>
                   ) : item.id === 'analytics' ? (
+                    <Link
+                      to="/analytics"
+                      className="flex flex-col items-center justify-center space-y-1
+                                text-surface-600 dark:text-surface-400"
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-xs font-medium">{item.label}</span>
+                    </Link>
+                  ) : item.id === 'courses' ? (
+                    <Link
+                      to="/courses"
                     <Link
                       to="/analytics"
                       className="flex flex-col items-center justify-center space-y-1

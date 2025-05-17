@@ -6,6 +6,7 @@ import { getIcon } from './utils/iconUtils.js'
 import Home from './pages/Home.jsx'
 import NotFound from './pages/NotFound.jsx'
 import Students from './pages/Students.jsx'
+import Courses from './pages/Courses.jsx'
 import Analytics from './pages/Analytics.jsx'
 
 function App() {
@@ -56,6 +57,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/students" element={<Students />} />
+          <Route path="/courses" element={<Courses />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
         
