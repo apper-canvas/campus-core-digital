@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { getIcon } from '../utils/iconUtils.js'
 import GradeDistributionChart from '../components/charts/GradeDistributionChart.jsx'
 import CoursePerformanceChart from '../components/charts/CoursePerformanceChart.jsx'
 import StudentProgressionChart from '../components/charts/StudentProgressionChart.jsx'
 import ReportGenerator from '../components/ReportGenerator.jsx'
+import BackButton from '../components/BackButton.jsx'
 
 const Analytics = () => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('semester')
@@ -22,7 +22,6 @@ const Analytics = () => {
   const ClipboardIcon = getIcon('Clipboard')
   const UsersIcon = getIcon('Users')
   const BellIcon = getIcon('Bell')
-  const UserCircleIcon = getIcon('UserCircle')
   const ArrowLeftIcon = getIcon('ArrowLeft')
   
   const handleExportData = () => {
@@ -67,10 +66,7 @@ const Analytics = () => {
         <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
           {/* Back Navigation */}
           <div className="mb-6">
-            <Link to="/" className="inline-flex items-center text-surface-600 hover:text-primary dark:text-surface-400 dark:hover:text-primary transition-colors">
-              <ArrowLeftIcon className="w-4 h-4 mr-2" />
-              <span>Back to Dashboard</span>
-            </Link>
+            <BackButton label="Back to Dashboard" />
           </div>
           
           {/* Header Section */}

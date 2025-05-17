@@ -4,6 +4,7 @@ import { toast } from 'react-toastify';
 import { getIcon } from '../utils/iconUtils.js';
 import StudentForm from '../components/StudentForm.jsx';
 import { initialStudents } from '../data/studentsData.js';
+import BackButton from '../components/BackButton.jsx';
 
 const Students = () => {
   const [students, setStudents] = useState(initialStudents);
@@ -61,6 +62,11 @@ const Students = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
+        {/* Back Navigation */}
+        <div className="mb-6">
+          <BackButton label="Back to Dashboard" />
+        </div>
+        
         <div className="mb-6">
           <h1 className="text-2xl md:text-3xl font-bold mb-2">Student Directory</h1>
           <p className="text-surface-600 dark:text-surface-400">
